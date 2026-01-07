@@ -13,10 +13,6 @@ Modern DevOps tools and practices are used in this project to demonstrate the de
         [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-blue)](https://www.linkedin.com/in/nikhil--chaudhari/)
         [![Medium](https://img.shields.io/badge/Medium-Writeups-black)](https://medium.com/@nikhil-c)    
 
-
-The project demonstrates the use of modern DevOps and DevSecOps methodologies for scalable and automated application deployment.
-
-
 ## 🛠️ Tools & Services Used
 
 | **Category**       | **Tools**                                                                                                                                                                                                 |
