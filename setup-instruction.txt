@@ -1,0 +1,377 @@
+
+
+
+		=========================================================================
+                   All Instructions to setup : Progress-Document
+	    =========================================================================
+
+	    video =2:04:00
+	    sprint 1 = 30 min
+	    sprint 2 = 30 min
+	    sprint 3 = 30 min
+	    sprint 4 = 30 min
+
+
+
+
+       ==================================================
+	         sprint 1 : Create server and Tool
+       ==================================================
+
+
+	  1. create VM/EC2 with size 4 cpu and 16 GB RAM and 20 GB OS-Disk/storage.
+	  2. open ports -- 22
+	                   80, 443
+	                   8080-Jenkins
+	                   9000-sonarkube
+	                   587- gmail-smtp 
+	                   465-gmail.
+	  
+	  3. login vm with private-key over ssh.
+	  4. install git -v
+	  5. clone repo ::  https://github.com/dncrypter/hotstar-kubernetes 
+	  6. > /script/
+
+	  7. install tools by running scripts. | chmod +x *.sh 
+	  => jenkin.sh   | also check/install java -v | openJDK 17 
+	     $ systemctl status jenkins
+	     check on browser ip:8080  
+       http://ec2-server-ip:9000/
+
+	  => sh docker.sh 
+	     $ docker run -d --name sonar -p 9000:9000 sonarqube:lts-community 
+	  => sh kubectl.sh
+	  => sh awscli.sh or sh azurevm.sh
+	  => sh trivy.sh
+	  => sh teraform.sh
+
+	  8. check all tool versions to verify installation is done.
+
+	  9. started with jenkins:
+	     username: admin
+	     password: admin
+	     name:     hostar
+	     email:    nikhilchaudhari296@gmail.com  
+
+
+	  10. jenkins url = http://ip:8080
+
+	  11. "Manage Jenkins" >> Plugins >> "available plugins"
+
+	  12. search & select all install =>
+
+	                          # "Eclipse Termin Installer" {install all without restart}
+	                          # SonarQube Scanner
+	                          # NodeJs
+	                          # OWASP dependency-check
+	                          # Stage view 
+	                          # blue ocean { helps to trigger pipeline from different stages }
+	                          # jdk { not found then don't worry ; already installed on jenkins}
+
+	               Docker Plugins:
+	               # Docker
+	               # Docker commons
+	               # Docker pipeline
+	               # Docker API
+	               # docker-build-step 
+
+	               # Terraform 
+
+
+     13. click on "Restart Jenkins" 
+
+
+
+
+     14.   SonarQube setup : 
+                             # go to url http://ip:9000    
+                             username = admin
+                             password = admin
+
+                             new pass = admin123
+
+                             # require token to connect sonarQube to Jenkins =>  Administration >> Security >> users>> "Generate token" 
+                             # sonartoken = " enter-sonarqube-token "  
+                             # generate token as =>  jenkins = "enter_token_value"  
+
+   
+    15. go to Jenkins dashboard :
+
+                             # configure tools within jenkins :
+                                ## manage-jenkins >> system >> "go down"
+                                ## click on Add-SonarQube
+                                      name = SonarQube
+                                      url = http://ip:9000
+
+                                ## server-auth-token 
+                                    click on Add
+                                ## it give you vault of jenkins to store creds.
+                                    
+                                    kind = secret text
+                                    secret = token_value
+                                    ID = Sonar-token 
+                                    Description = Sonar-token
+
+                                ## now you get selection option in Add , now apply & save it.
+
+
+
+                              # configure the tools which we have installed:
+
+                              ## manage-jenkins >> Tools :
+                              ## install JDK :
+                                 				name = jdk
+                                				Add-installer >> "Install from adoptium.net"
+                              					## jdk version  17.0.9+9
+
+                              # Add sonar-scanner >> 
+                              						 Name = sonar-scanner
+                              						 version = 7.0.0.4796
+
+                              # Add NodeJS >> 
+                                              name = nodejs [Note: after giving error "nodejs" changed to node]
+                               				  version = 17.9.0 
+
+                              # Dependence-Check >>
+                              						name = DC
+                              						install from github
+                              						version = 12.1.0 
+
+
+                              # Apply & save 
+
+
+    =============================================================
+              [ Sprint-2 ] ==== Creating Pipeline in Jenkins
+    =============================================================
+
+
+    1. new-item >>
+                   name = hotstar
+                   type = pipeline
+                   Ok
+                   Description = this Bingo Pipeline
+                   check : Discard old Builds
+
+    2. make github repo = private
+    3. start writing pipeline :
+                               # select "Hello world" pipeline
+                               # click "Pipeline syntax"
+                               # step = git
+                               # repo url =
+                               # come to github profile:
+                                 # main setting >> Developer-setting >> personal access token >> Token(classic) >> Generate new token (classic)
+                                    note = hostar-project 
+                                    perm = repo, write:packages, admin:repo_hook, admin:org_hook, project, 
+
+                                 Jenkins Github token =" xxxxxxxxxxxxxxxxxxxxxxxx "
+
+                               # go to : manage-Jenkins >> Credentials >> click "global" >> add creds :
+                                        kind = uname & pass
+                                        username = github-username
+                                        password = github-generated-token
+                                        ID = "github-token" 
+                                        Description = "github-token"
+                                        create
+
+                               # go to : pipeline syntax : 
+                               														select git 
+                               														select git-token
+                               														repo= main
+                               														copy generated text and add it to pipeline-script in "step".
+                               														Apply & save 
+                      output =====>>>
+                           git branch: 'main', credentialsId: 'github-token', url: 'https://github.com/DNcrypter/hotstar-kubernetes.git'                           
+
+
+                               # trigger pipeline : click on "Build Now"
+
+                               # check #1 in workspace repo is cloned.
+                               # configure multi-stage pipeline. => hotstar >> Configure >> Pipeline 
+                               # copy paste the Jenkinsfile text to this pipeline
+                               # Stage : Quality-gate => we get webhook that "quality test is passed or failed"
+                                         								abortpipeline:false   ===> it state that if pipeline fails still do not stop it. 
+ break : start here from next day.
+                               # creating webhook : Administartion >> Configuration : create
+                                                    name = jenkins
+                                                    URL =  http://ip:8080/sonarqube-webhook
+                                                    create
+
+                               # go to pipeline : "How to get and set -nvdapikey" in stage:"OWASP	FS SCAN"
+                                                => go to this link "https://nvd.nist.gov/developers/request-an-api-key"
+                                                   fill details and receive api key.
+                                                   set to that stage.
+                                                   api-key = " xxxxxxxxxxxxxxxxxxxxxxxx "
+
+                                # stage : "Docker Build & Push"
+                                  create docker-hub account to get uname and pass.
+                                  add docker creds in : Manage-jenkins >> Credintials >> global >>
+                                 												kind = uname & pass
+                                 												username = docker-hub-uname
+                                 												Password = docker-hub-pass
+                                 												ID = docker
+                                 												description = docker 
+  
+
+
+     # If you check pipeline , you will notice "Post" build-action section.
+       it use to notify when my pipelines get trigger, it mail me your pipeline is succesfully done or failed or aborted.
+
+     # for this : We require "SMTP Server":Gmail
+
+     # configure gmail account:
+     														go-to gmail account : Manage-account >> search "add passwords"      (Note: MFA should active on your gmail-account.)
+
+     																						Name = hotstar
+     																					pass = "xxx xxx xxx xxx" 
+
+                                go-to Jenkins : manage-jenkins >> system >> Basic Email-Notification :
+
+                                                SMTP server = smtp.gmail.com
+                                                suffix = @gmail.com
+                                                advanced >> smtp auth :
+                                                   uname = "nikhilchaudhari296@gmail.com"
+                                                   pass  = " "
+                                                   use SSL
+                                                   port = 465
+                                                   reply-to-add = "nikhilchaudhari296@gmail.com"
+                                                   test config by sending mail => "nikhilchaudhari296@gmail.com"
+
+
+                                                manage-jenkins >> system >> Extened-Email-Notification :
+
+                                                smtp server = smtp.gmail.com
+                                                port = 587 
+                                                use TLS
+                                                advanced >> add creds >>
+                                                                        kind = uname and pass
+                                                                        uname = "nikhilchaudhari296@gmail.com"
+                                                                        pass = " " 
+                                                                        use TLS 
+                                                                        ID = smtp-gmail
+                                                                        desci = smtp-gmail
+
+                                                                        see this related code in pipeline 
+                                                                        default suffix = @gmail.com
+                                                                        apply and save 
+
+     # Trigger pipeline and check which stage are failed : 
+      click "Build Now"
+
+     # checking Sonarqube stage result : >> http://ip:9000/projects  >> hotstar
+
+
+     # check trivy stage : #3 =====>
+                                      hotstar >> #3 >> workspaces
+                                      you will find trivyfs.txt
+     # check on docker-hub :
+        the image is uploaded.
+
+
+     # access deployed application :  http://ip:3000
+
+     # post build action : email sent to you
+
+
+     # check failed owasp stage : 
+                                  click #3 >> console-output : debug error : corrected => --apiApiKey
+
+
+                                >> hotstar >> #8 >> Dependency-check
+
+
+  ==============> Finally you created Image and deployed in Docker  <===============
+
+  
+
+
+       ==================================================
+           sprint 3 : Create server and Tool
+       ==================================================
+
+
+       
+       1. create aws user and attach policies directly.
+       2. add permission policies :
+          => AdministratorAccess 
+          => AmazonEC2FullAccess 
+          => IAMFullAccess 
+          => AmazonVPCFullAccess 
+          => AWSCloudFormationFullAccess 
+
+Access key ID = XXXXXXXXXXXXXXXXXXXXXXX
+Secret access key = XXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+       3. create access key.
+       4. there should be installed :
+          => aws cli
+          => eksctl
+          => kubectl 
+
+       5. fallow this instruction:
+         https://github.com/DNcrypter/hotstar-kubernetes/blob/main/K8S/eks-cluster-and-Deployment-guide.txt 
+
+       6. run to create:
+         eksctl create cluster --name Nikhil-cluster4 --region ap-south-1 --node-type t2.medium --nodes-min 2 --nodes-max 2  --zones ap-south-1a,ap-south-1b 
+
+       7. create monitoring-server:
+        # create new-pipeline:
+         Jenkins>>new-item>>:
+          name = monitoringserver >> pipeline>>ok
+        # Configuration>>General:
+          description = "monitoring server" 
+          Discard-old-builds >> max-to-keep = 2 
+          ## paste script in pipeline section from : 
+          https://github.com/DNcrypter/hotstar-kubernetes/blob/main/Terraform/jenkinsfile 
+
+        # add creds in se
+         Dashboard>>manage-jenkins>>Security>>Credentials
+         >>Add-creds
+
+         ## kind = secret-text , scope=global , secret= xxxxxxxxxxxxxxxx , ID = AWS_ACCESS_KEY_ID , Description= AWS_ACCESS_KEY_ID  
+          >>create 
+         ## kind = secret-text , scope=global , secret= xxxxxxxxxxxxxxxx , ID = AWS_SECRET_ACCESS_KEY  , Description= AWS_SECRET_ACCESS_KEY  
+          >>create
+
+        # seting Pipeline Parameter:
+           >>Dashboard>>Monitoringserver>>configuration>>
+           >>Add-parameter>>Choice-parameter>>
+           name = action, Choices =apply destroy , Description = "this is for monitoring server setup" 
+           >>apply >>save 
+
+
+        # running terraform using pipeline : to create monitoring server :
+
+         ## before , please create key pair in aws with name = terra 
+
+         >>Dashboard>>Monitoringserver>>Build-with-parameter:
+         action = apply >>Build       
+           ## you can check log
+
+        8. login to monitoring server:
+
+        # use ip and terra.pem 
+
+
+        9. check EKS has been created? 
+          # check nodes
+
+        10. go to your server and go to K8s folder of git repo:
+
+          ## edit image="docker-username/hotstar"
+          ## study the manifest.yml 
+
+        11. run :  kubectl apply -f manifest.yml 
+        12. run :  kubectl get all 
+          # check service>> load-balancer>>externa-ip 
+          # test kubernetes auto-healing :
+            run :  kubectl delete pod pod-name 
+            run : k get pods
+
+
+
+       ==================================================
+           sprint 3 : Setup Cloudflare and DNS 
+       ==================================================
+
+
