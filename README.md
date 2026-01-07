@@ -27,7 +27,9 @@ Modern DevOps tools and practices are used in this project to demonstrate the de
 | **IAC**             | ![Terraform](https://img.shields.io/badge/Terraform-623CE4?style=flat-square&logo=terraform&logoColor=white)
 
 
- 
+ ## 🍁Setup
+- Follow the step-by-step instruction that is provided in project_instruction.txt
+- [Setup Instruction (txt)](https://github.com/DNcrypter/hotstar_kubernetes/blob/main/setup-instruction.txt)
 
 ## 🍁 Project Phases
 
@@ -45,10 +47,6 @@ Modern DevOps tools and practices are used in this project to demonstrate the de
 - Implement Trivy for vulnerability scanning and OWASP for security best practices.
 
  
-
-## 🍁Setup
-- Follow the step-by-step instruction that is provided in project_instruction.txt 
-
 ## 🍁 Conclusion
 This project validates how modern DevOps and DevSecOps practices can be combined to deliver applications reliably on Kubernetes.  
 By integrating CI/CD, security scanning, monitoring, and GitOps, the deployment process becomes automated, secure, and scalable.  
